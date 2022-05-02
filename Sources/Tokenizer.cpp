@@ -2,9 +2,9 @@
  * Created by Ashwin Rohit Alagiri Rajan
  */
 
-#include "Tokenizer.h"
+#include "../Include/Tokenizer.h"
 
-namespace Tokenizer {
+namespace simpleconv {
 
     using namespace std;
     vector<Token> Tokenizer::tokenize() {
@@ -17,16 +17,16 @@ namespace Tokenizer {
                 }
                 case '#':
                 case '-':
-                case '>': {
-                    token_list.push_back(this->tokenize_specifier());
-                    break;
-                }
+                case '>':
                 case '*':
                 case '/':
                 case '`':
-                case '~': {
-                    vector<Token> paired_tokens = this->tokenize_paired_specifier();
-                    token_list.insert(token_list.end(), paired_tokens.begin(), paired_tokens.end());
+                case '~':
+                case '(':
+                case ')':
+                case '[':
+                case ']':{
+                    token_list.push_back(this->tokenize_specifier());
                     break;
                 }
                 default: {
@@ -53,12 +53,6 @@ namespace Tokenizer {
         while(!this->eof() && condition(this->next()))
             consumed.push_back(this->consume());
         return consumed;
-    }
-
-    string Tokenizer::consume_whitespace() {
-        return consume_while([](char x) -> bool{
-            return isspace(x);
-        });
     }
 
     string Tokenizer::consume_all_consecutive(char x) {
@@ -103,36 +97,5 @@ namespace Tokenizer {
         return text_token;
     }
 
-    vector<Token> Tokenizer::tokenize_paired_specifier() {
-        vector<Token> token_list;
-        char current_specifier = this->next();
-        token_list.push_back(this->tokenize_specifier());
-        while(!this->eof()) {
-            Token internal_text_token = this->tokenize_text();
-            token_list.push_back(internal_text_token);
-            if(Tokenizer::is_specifier(this->next()) && this->next() != current_specifier) {
-                vector<Token> internal_specifier_tokens = this->tokenize_paired_specifier();
-                token_list.insert(token_list.end(), internal_specifier_tokens.begin(), internal_specifier_tokens.end());
-            } else if(this->next() == '\n') {
-                return token_list;
-            } else {
-                token_list.push_back(this->tokenize_specifier());
-            }
-        }
-        return token_list;
-    }
-
-    bool Tokenizer::is_specifier(char x) {
-        switch (x) {
-            case '#':
-            case '-':
-            case '>':
-            case '*':
-            case '/':
-            case '`':
-            case '~': return true;
-            default: return false;
-        }
-    }
 
 }

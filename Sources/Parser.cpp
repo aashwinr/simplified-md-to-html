@@ -3,40 +3,50 @@
 //
 
 #include "../Include/Parser.h"
+#include <iostream>
 
 template <typename T>
 inline void push_back_all(std::vector<T> &dest, const std::vector<T> &src) {
-    dest.insert(dest.begin(), src.begin(), src.end());
+    dest.insert(dest.end(), src.begin(), src.end());
 }
 
 namespace simpleconv {
 
     using namespace std;
 
-    Token& Parser::next() {
-        return this->m_tokenlist[this->m_pos];
+    void Parser::generate_parse_unit_list() {
+        for(const auto& i: this->m_tokenlist) {
+            this->m_parse_unit_list.emplace_back(
+                    Parser::get_unit_kind(i),
+                    i.m_contents
+            );
+        }
     }
 
-    Token &Parser::consume() {
-        Token& next = this->next();
+    ParseUnit& Parser::next() {
+        return this->m_parse_unit_list[this->m_pos];
+    }
+
+    ParseUnit& Parser::consume() {
+        ParseUnit& next = this->next();
         this->m_pos++;
         return next;
     }
 
-    vector<Token> Parser::consume_while(const function<bool(const Token&)> &condition) {
-        vector<Token> tokenlist;
+    vector<ParseUnit> Parser::consume_while(const function<bool(const ParseUnit&)> &condition) {
+        vector<ParseUnit> p_unit_list;
         while(!this->end() && condition(this->next())) {
-            tokenlist.push_back(this->consume());
+            p_unit_list.push_back(this->consume());
         }
-        return tokenlist;
+        return p_unit_list;
     }
 
     vector<ParseUnit> Parser::parse() {
         vector<ParseUnit> specifier_list;
         while(!this->end()) {
-            ParseUnitKind next_specifier_kind = Parser::get_unit_kind(this->next());
-            switch (next_specifier_kind) {
+            switch (this->next().m_kind) {
                 case ParseUnitKind::Heading:
+                    specifier_list.push_back(this->parse_heading());
                     break;
                 case ParseUnitKind::List:
                     break;
@@ -48,88 +58,101 @@ namespace simpleconv {
                 case ParseUnitKind::Italics:
                 case ParseUnitKind::Strikethrough:
                 case ParseUnitKind::Text:
+                    specifier_list.push_back(this->parse_text());
                     break;
                 case ParseUnitKind::Newline:
+                    this->parse_newline();
                     break;
+                case ParseUnitKind::Invalid:
+                    break;
+                default:
+                    cout << "Invalid case encountered" << endl;
             }
         }
+        return specifier_list;
     }
 
-    vector<ParseUnit> Parser::parse_text() {
-
+    ParseUnit Parser::parse_text() {
+        return this->consume();
     }
 
     ParseUnit Parser::parse_heading() {
 
-        this->consume_while([](const Token& token){ return Parser::get_unit_kind(token) == ParseUnitKind::Heading; });
+        // Init
+        ParseUnit heading_unit(ParseUnitKind::Heading, this->next().m_contents);
+        this->consume_while([](const simpleconv::ParseUnit& p_unit){ return p_unit.m_kind == ParseUnitKind::Heading; });
+
+        // Context Handling
         if(this->check_context(ParseUnitKind::Heading)) {
             this->unset_context(ParseUnitKind::Heading);
             return ParseUnit(ParseUnitKind::Invalid, "");
         }
         this->set_context(ParseUnitKind::Heading);
 
-        ParseUnit heading_unit(ParseUnitKind::Heading, this->next().m_contents);
-
         while(!this->end()) {
+            switch(this->next().m_kind) {
 
-            ParseUnitKind current_token_kind = get_unit_kind(this->next());
-            if(current_token_kind == ParseUnitKind::Newline) {
-                this->consume();
-                return heading_unit;
-            } else if(current_token_kind == ParseUnitKind::Heading){
-                this->parse_heading();
-                return heading_unit;
-            }
+                case ParseUnitKind::Newline:
+                    this->unset_context(ParseUnitKind::Heading);
+                    this->parse_newline();
+                    return heading_unit;
 
-            switch(current_token_kind) {
+                case ParseUnitKind::Heading:
+                    this->parse_heading();
+                    return heading_unit;
+
                 case ParseUnitKind::Bold:
                     heading_unit.m_subunits.push_back(this->parse_bold());
                     break;
+
                 case ParseUnitKind::Italics:
                     heading_unit.m_subunits.push_back(this->parse_italics());
                     break;
+
                 case ParseUnitKind::Strikethrough:
                     heading_unit.m_subunits.push_back(this->parse_strikethrough());
                     break;
-                default:
-                    push_back_all(heading_unit.m_subunits, this->parse_text());
-                    break;
-            }
 
+                default:
+                    heading_unit.m_subunits.push_back(this->parse_text());
+
+            }
         }
+        this->unset_context(ParseUnitKind::Heading);
         return heading_unit;
     }
 
     ParseUnit Parser::parse_list() {
-        return {};
+        return ParseUnit(ParseUnitKind::Invalid, {});
     }
 
     ParseUnit Parser::parse_quote() {
-        return {};
+        return ParseUnit(ParseUnitKind::Invalid, {});
     }
 
     ParseUnit Parser::parse_bold() {
-        return {};
+        return ParseUnit(ParseUnitKind::Invalid, {});
     }
 
     ParseUnit Parser::parse_italics() {
-        return {};
+        return ParseUnit(ParseUnitKind::Invalid, {});
     }
 
     ParseUnit Parser::parse_code() {
-        return {};
+        return ParseUnit(ParseUnitKind::Invalid, {});
     }
 
     ParseUnit Parser::parse_strikethrough() {
-        return {};
+        return ParseUnit(ParseUnitKind::Invalid, {});
     }
 
     ParseUnit Parser::parse_newline() {
-        return {};
+        this->consume();
+        return ParseUnit(ParseUnitKind::Newline, "\n");
     }
 
     bool Parser::end() {
-        return this->m_pos >= this->m_tokenlist.size();
+        return this->m_pos >= this->m_parse_unit_list.size();
     }
 
     ParseUnitKind Parser::get_unit_kind(const Token &token) {

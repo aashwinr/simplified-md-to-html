@@ -37,20 +37,24 @@ namespace simpleconv {
             m_subunits{{}} {}
     };
 
-
     class Parser {
+
     public:
     private:
         vector<Token> m_tokenlist;
+        vector<ParseUnit> m_parse_unit_list;
         size_t m_context;
         size_t m_pos;
 
     public:
-        explicit Parser(vector<Token> tokenlist): m_tokenlist(std::move(tokenlist)), m_context(0), m_pos(0) {}
+        explicit Parser(vector<Token> tokenlist): m_tokenlist(std::move(tokenlist)), m_context(0), m_pos(0) {
+            this->generate_parse_unit_list();
+        }
         vector<ParseUnit> parse();
 
     private:
-        vector<ParseUnit> parse_text();
+        void generate_parse_unit_list();
+        ParseUnit parse_text();
         ParseUnit parse_heading();
         ParseUnit parse_list();
         ParseUnit parse_quote();
@@ -59,14 +63,15 @@ namespace simpleconv {
         ParseUnit parse_code();
         ParseUnit parse_strikethrough();
         ParseUnit parse_newline();
-        Token& next();
-        Token& consume();
-        vector<Token> consume_while(const function<bool(const Token&)> &condition);
-        inline bool end();
+        ParseUnit& next();
+        ParseUnit& consume();
+        vector<ParseUnit> consume_while(const function<bool(const ParseUnit&)> &condition);
+        [[nodiscard]] inline bool end();
         inline static ParseUnitKind get_unit_kind(const Token &token);
         inline void set_context(ParseUnitKind kind);
         inline void unset_context(ParseUnitKind kind);
-        inline bool check_context(ParseUnitKind kind) const;
+        [[nodiscard]] inline bool check_context(ParseUnitKind kind) const;
+
     };
 }
 

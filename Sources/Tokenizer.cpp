@@ -8,11 +8,11 @@ namespace simpleconv {
 
     using namespace std;
     vector<Token> Tokenizer::tokenize() {
-        vector<Token> token_list;
+        vector<Token> tokenList;
         while(!this->eof()) {
             switch (this->next()) {
                 case '\n': {
-                    token_list.push_back(this->tokenize_newline());
+                    tokenList.push_back(this->tokenize_newline());
                     break;
                 }
                 case '#':
@@ -22,20 +22,21 @@ namespace simpleconv {
                 case '/':
                 case '`':
                 case '~':
-                case '(':
-                case ')':
-                case '[':
-                case ']':{
-                    token_list.push_back(this->tokenize_specifier());
+//                case '(': Fixme: tokenize links and images
+//                case ')':
+//                case '[':
+//                case ']':
+                            {
+                    tokenList.push_back(this->tokenize_specifier());
                     break;
                 }
                 default: {
-                    token_list.push_back(this->tokenize_text());
+                    tokenList.push_back(this->tokenize_text());
                     break;
                 }
             }
         }
-        return token_list;
+        return tokenList;
     }
 
     char Tokenizer::next() {

@@ -21,7 +21,6 @@ namespace simpleconv {
         Strikethrough = 128,
         Text = 256,
         Newline = 512,
-        Invalid,
 //      Link, Fixme: Parse links and images
 //      Images,
     };
@@ -29,12 +28,11 @@ namespace simpleconv {
     struct ParseUnit {
         ParseUnitKind m_kind;
         string m_contents;
-        vector<ParseUnit> m_subunits;
-
-        explicit ParseUnit(ParseUnitKind kind, string contents):
+        bool is_terminating = false;
+        explicit ParseUnit(ParseUnitKind kind, string contents = ""):
             m_kind{kind},
-            m_contents{std::move(contents)},
-            m_subunits{{}} {}
+            m_contents{std::move(contents)}
+            {}
     };
 
     class Parser {
@@ -53,25 +51,30 @@ namespace simpleconv {
         vector<ParseUnit> parse();
 
     private:
-        void generate_parse_unit_list();
-        ParseUnit parse_text();
-        ParseUnit parse_heading();
-        ParseUnit parse_list();
-        ParseUnit parse_quote();
-        ParseUnit parse_bold();
-        ParseUnit parse_italics();
-        ParseUnit parse_code();
-        ParseUnit parse_strikethrough();
-        ParseUnit parse_newline();
         ParseUnit& next();
         ParseUnit& consume();
         vector<ParseUnit> consume_while(const function<bool(const ParseUnit&)> &condition);
+        inline vector<ParseUnit> consume_all_parse_unit_kind(ParseUnitKind kind);
         [[nodiscard]] inline bool end();
         inline static ParseUnitKind get_unit_kind(const Token &token);
         inline void set_context(ParseUnitKind kind);
         inline void unset_context(ParseUnitKind kind);
         [[nodiscard]] inline bool check_context(ParseUnitKind kind) const;
 
+        ParseUnit& parse_uncompounded(ParseUnitKind kind);
+        void generate_parse_unit_list();
+        vector<ParseUnit> parse_text();
+        // Uncompounded Types
+        void terminate_headings(vector<ParseUnit>&);
+        ParseUnit parse_heading();
+        ParseUnit parse_bold();
+        ParseUnit parse_italics();
+        ParseUnit parse_code();
+        ParseUnit parse_strikethrough();
+        // Compunded Types
+        ParseUnit parse_list();
+        ParseUnit parse_quote();
+        ParseUnit parse_newline();
     };
 }
 

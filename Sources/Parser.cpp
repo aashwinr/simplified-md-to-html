@@ -49,21 +49,20 @@ namespace simpleconv {
                     specifier_list.push_back(this->parse_heading());
                     break;
                 case ParseUnitKind::List:
+                    this->parse_list();
                     break;
                 case ParseUnitKind::Quote:
+                    this->parse_quote();
                     break;
                 case ParseUnitKind::Code:
-                    break;
                 case ParseUnitKind::Bold:
                 case ParseUnitKind::Italics:
                 case ParseUnitKind::Strikethrough:
                 case ParseUnitKind::Text:
-                    specifier_list.push_back(this->parse_text());
+                    push_back_all(specifier_list, this->parse_text());
                     break;
                 case ParseUnitKind::Newline:
-                    this->parse_newline();
-                    break;
-                case ParseUnitKind::Invalid:
+                    specifier_list.push_back(this->parse_newline());
                     break;
                 default:
                     cout << "Invalid case encountered" << endl;
@@ -72,83 +71,89 @@ namespace simpleconv {
         return specifier_list;
     }
 
-    ParseUnit Parser::parse_text() {
-        return this->consume();
+    vector<ParseUnit> Parser::parse_text() {
+        this->set_context(ParseUnitKind::Text);
+        vector<ParseUnit> ret_list;
+        while(!this->end()) {
+            switch(this->next().m_kind) {
+                case ParseUnitKind::Bold:
+                    ret_list.push_back(this->parse_bold());
+                    break;
+                case ParseUnitKind::Italics:
+                    ret_list.push_back(this->parse_italics());
+                    break;
+                case ParseUnitKind::Code:
+                    ret_list.push_back(this->parse_code());
+                    break;
+                case ParseUnitKind::Strikethrough:
+                    ret_list.push_back(this->parse_strikethrough());
+                    break;
+                case ParseUnitKind::Newline:
+                    this->terminate_headings(ret_list);
+                    this->parse_newline();
+                    this->unset_context(ParseUnitKind::Text);
+                    return ret_list;
+                case ParseUnitKind::Text:
+                default:
+                    ret_list.emplace_back(ParseUnitKind::Text, this->consume().m_contents);
+            }
+        }
+        this->unset_context(ParseUnitKind::Text);
+        return ret_list;
+    }
+
+    ParseUnit& Parser::parse_uncompounded(ParseUnitKind kind) {
+        ParseUnit& ret = this->consume();
+        if(this->check_context(kind)) {
+            unset_context(kind);
+            ret.is_terminating = true;
+            return ret;
+        }
+        set_context(kind);
+        return ret;
+    }
+
+    void Parser::terminate_headings(vector<ParseUnit> &return_list) {
+        if(this->check_context(ParseUnitKind::Heading)) {
+            this->unset_context(ParseUnitKind::Heading);
+            ParseUnit ret = ParseUnit(ParseUnitKind::Heading);
+            ret.is_terminating = true;
+            return_list.push_back(ret);
+        }
     }
 
     ParseUnit Parser::parse_heading() {
-
-        // Init
-        ParseUnit heading_unit(ParseUnitKind::Heading, this->next().m_contents);
-        this->consume_while([](const simpleconv::ParseUnit& p_unit){ return p_unit.m_kind == ParseUnitKind::Heading; });
-
-        // Context Handling
-        if(this->check_context(ParseUnitKind::Heading)) {
-            this->unset_context(ParseUnitKind::Heading);
-            return ParseUnit(ParseUnitKind::Invalid, "");
-        }
-        this->set_context(ParseUnitKind::Heading);
-
-        while(!this->end()) {
-            switch(this->next().m_kind) {
-
-                case ParseUnitKind::Newline:
-                    this->unset_context(ParseUnitKind::Heading);
-                    this->parse_newline();
-                    return heading_unit;
-
-                case ParseUnitKind::Heading:
-                    this->parse_heading();
-                    return heading_unit;
-
-                case ParseUnitKind::Bold:
-                    heading_unit.m_subunits.push_back(this->parse_bold());
-                    break;
-
-                case ParseUnitKind::Italics:
-                    heading_unit.m_subunits.push_back(this->parse_italics());
-                    break;
-
-                case ParseUnitKind::Strikethrough:
-                    heading_unit.m_subunits.push_back(this->parse_strikethrough());
-                    break;
-
-                default:
-                    heading_unit.m_subunits.push_back(this->parse_text());
-
-            }
-        }
-        this->unset_context(ParseUnitKind::Heading);
-        return heading_unit;
+        return this->parse_uncompounded(ParseUnitKind::Heading);
     }
 
     ParseUnit Parser::parse_list() {
-        return ParseUnit(ParseUnitKind::Invalid, {});
+        return ParseUnit(ParseUnitKind::Newline);
     }
 
     ParseUnit Parser::parse_quote() {
-        return ParseUnit(ParseUnitKind::Invalid, {});
+        return ParseUnit(ParseUnitKind::Newline);
     }
 
     ParseUnit Parser::parse_bold() {
-        return ParseUnit(ParseUnitKind::Invalid, {});
+        return this->parse_uncompounded(ParseUnitKind::Bold);
     }
 
     ParseUnit Parser::parse_italics() {
-        return ParseUnit(ParseUnitKind::Invalid, {});
+        return this->parse_uncompounded(ParseUnitKind::Italics);
     }
 
     ParseUnit Parser::parse_code() {
-        return ParseUnit(ParseUnitKind::Invalid, {});
+        return this->parse_uncompounded(ParseUnitKind::Code);
     }
 
     ParseUnit Parser::parse_strikethrough() {
-        return ParseUnit(ParseUnitKind::Invalid, {});
+        return this->parse_uncompounded(ParseUnitKind::Strikethrough);
     }
 
+    // Fixme: Check for cases when newline is on a separate line, in that case it needs to return a newline.
+    // For now it will just not return anything.
     ParseUnit Parser::parse_newline() {
-        this->consume();
-        return ParseUnit(ParseUnitKind::Newline, "\n");
+        return this->consume();
     }
 
     bool Parser::end() {
@@ -191,6 +196,12 @@ namespace simpleconv {
 
     bool Parser::check_context(ParseUnitKind kind) const {
         return (bool)(this->m_context & (size_t)kind);
+    }
+
+    vector<ParseUnit> Parser::consume_all_parse_unit_kind(ParseUnitKind kind) {
+        return this->consume_while([=](const ParseUnit& p_unit){
+            return p_unit.m_kind == kind;
+        });
     }
 
 

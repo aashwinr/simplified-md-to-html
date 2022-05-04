@@ -42,6 +42,7 @@ namespace simpleconv {
         char next();
         char consume();
         string consume_while(const function<bool(char)>& condition);
+        string consume_whitespace();
         string consume_all_consecutive(char x);
         inline bool eof();
 

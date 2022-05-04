@@ -56,8 +56,14 @@ namespace simpleconv {
         return consumed;
     }
 
+    string Tokenizer::consume_whitespace() {
+        return this->consume_while([](char x){
+            return (bool)(isspace(x));
+        });
+    }
+
     string Tokenizer::consume_all_consecutive(char x) {
-        return this->consume_while([=](char ch){ return ch == x; });
+        return this->consume_while([x](char ch){ return ch == x; });
     }
 
     bool Tokenizer::eof() {
@@ -74,10 +80,12 @@ namespace simpleconv {
 
     Token Tokenizer::tokenize_specifier() {
         char specifier = this->next();
-        return {
+        Token ret =  {
             TokenKind::Specifier,
             this->consume_all_consecutive(specifier),
         };
+        this->consume_whitespace();
+        return ret;
     }
 
     Token Tokenizer::tokenize_text() {

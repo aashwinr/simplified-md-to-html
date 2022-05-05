@@ -15,10 +15,10 @@ namespace simpleconv {
     using namespace std;
 
     void Parser::generate_parse_unit_list() {
-        for(const auto& i: this->m_tokenlist) {
+        for(const auto& token: this->m_tokenlist) {
             this->m_parse_unit_list.emplace_back(
-                    Parser::get_unit_kind(i),
-                    i.m_contents
+                    Parser::get_unit_kind(token),
+                    token.m_contents
             );
         }
     }
@@ -49,10 +49,10 @@ namespace simpleconv {
                     specifier_list.push_back(this->parse_heading());
                     break;
                 case ParseUnitKind::List:
-                    this->parse_list();
+                    push_back_all(specifier_list, this->parse_list());
                     break;
                 case ParseUnitKind::Quote:
-                    this->parse_quote();
+                    push_back_all(specifier_list, this->parse_quote());
                     break;
                 case ParseUnitKind::Code:
                 case ParseUnitKind::Bold:
@@ -102,11 +102,41 @@ namespace simpleconv {
         return ret_list;
     }
 
+    vector<ParseUnit> Parser::parse_text_ignore_newline() {
+        this->set_context(ParseUnitKind::Text);
+        vector<ParseUnit> ret_list;
+        while(!this->end()) {
+            switch(this->next().m_kind) {
+                case ParseUnitKind::Bold:
+                    ret_list.push_back(this->parse_bold());
+                    break;
+                case ParseUnitKind::Italics:
+                    ret_list.push_back(this->parse_italics());
+                    break;
+                case ParseUnitKind::Code:
+                    ret_list.push_back(this->parse_code());
+                    break;
+                case ParseUnitKind::Strikethrough:
+                    ret_list.push_back(this->parse_strikethrough());
+                    break;
+                case ParseUnitKind::Newline:
+                    this->terminate_headings(ret_list);
+                    this->unset_context(ParseUnitKind::Text);
+                    return ret_list;
+                case ParseUnitKind::Text:
+                default:
+                    ret_list.emplace_back(ParseUnitKind::Text, this->consume().m_contents);
+            }
+        }
+        this->unset_context(ParseUnitKind::Text);
+        return ret_list;
+    }
+
     ParseUnit& Parser::parse_uncompounded(ParseUnitKind kind) {
         ParseUnit& ret = this->consume();
         if(this->check_context(kind)) {
             unset_context(kind);
-            ret.is_terminating = true;
+            ret.m_is_terminating = true;
             return ret;
         }
         set_context(kind);
@@ -117,7 +147,7 @@ namespace simpleconv {
         if(this->check_context(ParseUnitKind::Heading)) {
             this->unset_context(ParseUnitKind::Heading);
             ParseUnit ret = ParseUnit(ParseUnitKind::Heading);
-            ret.is_terminating = true;
+            ret.m_is_terminating = true;
             return_list.push_back(ret);
         }
     }
@@ -126,12 +156,125 @@ namespace simpleconv {
         return this->parse_uncompounded(ParseUnitKind::Heading);
     }
 
-    ParseUnit Parser::parse_list() {
-        return ParseUnit(ParseUnitKind::Newline);
+    uint8_t Parser::get_compunded_unit_depth(const ParseUnit &compounded_unit) {
+        return compounded_unit.m_contents.size();
     }
 
-    ParseUnit Parser::parse_quote() {
-        return ParseUnit(ParseUnitKind::Newline);
+    vector<ParseUnit> Parser::parse_compounded(ParseUnitKind kind) {
+        this->m_current_compound_depth++;
+        this->consume_all_parse_unit_kind(kind);
+        vector<ParseUnit> ret_list;
+        ret_list.emplace_back(kind);
+        vector<ParseUnit> subunits;
+
+        bool break_outer_loop = false;
+        ParseUnit terminating(kind);
+        terminating.m_is_terminating = true;
+
+        while(!this->end()) {
+            switch(this->next().m_kind) {
+                case ParseUnitKind::Heading:
+                    subunits.push_back(this->parse_heading());
+                    break;
+                case ParseUnitKind::List: {
+                    uint8_t compound_depth = Parser::get_compunded_unit_depth(this->next());
+                    if (compound_depth != this->m_current_compound_depth) {
+                        if (compound_depth < this->m_current_compound_depth) {
+                            push_back_all(ret_list, subunits);
+                            ret_list.push_back(terminating);
+                            this->m_current_compound_depth--;
+                            return ret_list;
+                        }
+                        push_back_all(subunits, this->parse_list());
+                    } else {
+                        push_back_all(subunits, this->parse_list_item());
+                    }
+                }
+                case ParseUnitKind::Quote: {
+                    uint8_t compound_depth = Parser::get_compunded_unit_depth(this->next());
+                    if (compound_depth != this->m_current_compound_depth) {
+                        if (compound_depth < this->m_current_compound_depth) {
+                            push_back_all(ret_list, subunits);
+                            ret_list.push_back(terminating);
+                            this->m_current_compound_depth--;
+                            return ret_list;
+                        }
+                        push_back_all(subunits, this->parse_quote());
+                    } else {
+                        push_back_all(subunits, this->parse_quote_item());
+                    }
+                }
+                case ParseUnitKind::Newline:
+                    this->parse_newline();
+                    if(this->end() || this->next().m_kind != kind) {
+                        break_outer_loop = true;
+                        break;
+                    }
+                    break;
+                case ParseUnitKind::Bold:
+                case ParseUnitKind::Italics:
+                case ParseUnitKind::Code:
+                case ParseUnitKind::Strikethrough:
+                case ParseUnitKind::Text:
+                default:
+                    push_back_all(subunits, this->parse_text());
+                    break;
+            }
+            if(break_outer_loop) { break; }
+        }
+        push_back_all(ret_list, subunits);
+        ret_list.push_back(terminating);
+        this->m_current_compound_depth--;
+        return ret_list;
+    }
+
+    vector<ParseUnit> Parser::parse_compounded_subunit(ParseUnitKind kind) {
+        this->consume_all_parse_unit_kind(kind);
+        vector<ParseUnit> ret;
+        ParseUnit beginning(kind);
+        ParseUnit terminating(kind);
+        terminating.m_is_terminating = true;
+        ret.push_back(beginning);
+        while(!this->end()) {
+            switch (this->next().m_kind) {
+                case ParseUnitKind::Heading:
+                    ret.push_back(this->parse_heading());
+                    break;
+                case ParseUnitKind::List:
+                    push_back_all(ret, this->parse_list());
+                    break;
+                case ParseUnitKind::Quote:
+                    push_back_all(ret, this->parse_quote());
+                    break;
+                case ParseUnitKind::Newline:
+                    break;
+                case ParseUnitKind::Bold:
+                case ParseUnitKind::Italics:
+                case ParseUnitKind::Code:
+                case ParseUnitKind::Strikethrough:
+                case ParseUnitKind::Text:
+                default:
+                    push_back_all(ret, this->parse_text_ignore_newline());
+            }
+        }
+        ret.push_back(terminating);
+        return ret;
+    }
+
+    vector<ParseUnit> Parser::parse_list() {
+        return this->parse_compounded(ParseUnitKind::List);
+    }
+
+    vector<ParseUnit> Parser::parse_list_item() {
+        return this->parse_compounded_subunit(ParseUnitKind::ListItem);
+    }
+
+    vector<ParseUnit> Parser::parse_quote() {
+        return this->parse_compounded(ParseUnitKind::Quote);
+    }
+
+    vector<ParseUnit> Parser::parse_quote_item() {
+        return this->parse_compounded_subunit(ParseUnitKind::QuoteItem);
     }
 
     ParseUnit Parser::parse_bold() {
@@ -203,6 +346,5 @@ namespace simpleconv {
             return p_unit.m_kind == kind;
         });
     }
-
 
 }

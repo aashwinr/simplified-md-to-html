@@ -21,6 +21,8 @@ namespace simpleconv {
         Strikethrough = 128,
         Text = 256,
         Newline = 512,
+        ListItem,
+        QuoteItem,
 //      Link, Fixme: Parse links and images
 //      Images,
     };
@@ -28,7 +30,7 @@ namespace simpleconv {
     struct ParseUnit {
         ParseUnitKind m_kind;
         string m_contents;
-        bool is_terminating = false;
+        bool m_is_terminating = false;
         explicit ParseUnit(ParseUnitKind kind, string contents = ""):
             m_kind{kind},
             m_contents{std::move(contents)}
@@ -42,10 +44,11 @@ namespace simpleconv {
         vector<Token> m_tokenlist;
         vector<ParseUnit> m_parse_unit_list;
         size_t m_context;
+        uint8_t m_current_compound_depth;
         size_t m_pos;
 
     public:
-        explicit Parser(vector<Token> tokenlist): m_tokenlist(std::move(tokenlist)), m_context(0), m_pos(0) {
+        explicit Parser(vector<Token> tokenlist): m_tokenlist(std::move(tokenlist)), m_context(0), m_current_compound_depth(0), m_pos(0) {
             this->generate_parse_unit_list();
         }
         vector<ParseUnit> parse();
@@ -63,7 +66,9 @@ namespace simpleconv {
 
         ParseUnit& parse_uncompounded(ParseUnitKind kind);
         void generate_parse_unit_list();
+        vector <ParseUnit> parse_text_ignore_newline();
         vector<ParseUnit> parse_text();
+
         // Uncompounded Types
         void terminate_headings(vector<ParseUnit>&);
         ParseUnit parse_heading();
@@ -71,11 +76,109 @@ namespace simpleconv {
         ParseUnit parse_italics();
         ParseUnit parse_code();
         ParseUnit parse_strikethrough();
+
         // Compunded Types
-        ParseUnit parse_list();
-        ParseUnit parse_quote();
+        vector <ParseUnit> parse_compounded(ParseUnitKind kind);
+        vector <ParseUnit> parse_compounded_subunit(ParseUnitKind kind);
+        static uint8_t get_compunded_unit_depth(const ParseUnit &compounded_unit);
+        vector<ParseUnit> parse_list();
+        vector<ParseUnit> parse_list_item();
+        vector<ParseUnit> parse_quote();
+        vector <ParseUnit> parse_quote_item();
         ParseUnit parse_newline();
+
     };
 }
 
 #endif //PROPERMDTRANSLATER_PARSER_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

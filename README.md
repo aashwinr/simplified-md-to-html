@@ -1,8 +1,8 @@
 # Simplified md to html converter
 
 > ## About the Syntax
-- The syntax for this markup this version of markup language is slightly different from the original.
-- The current version is built in a way that allows for trivial conversion to the original md syntax specification.
+- The syntax for this version of this simplified markdown is slightly different from the original.
+- It is trivial to modify the code in order to support the original syntax, I just think this is more clear.
 
 > ## Syntax
 

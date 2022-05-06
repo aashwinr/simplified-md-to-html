@@ -16,9 +16,9 @@
 #### Stylistic Elements
 | Name            | Syntax                     |
 |-----------------|----------------------------|
-| Bold/Strong     | **`* bold element here*`**     |
+| Bold/Strong     | **`* bold element here *`**     |
 | Italics/Emphasis | *`/ italics element here /`* |
-| Strikethrough   | `~  ̶s̶t̶r̶i̶k̶e̶t̶h̶r̶o̶u̶g̶h̶ ̶h̶e̶r̶e̶ ~`  |
+| Strikethrough   | ~~`~ㅤstrikethrough element here~`~~  |
 | Code blocks     | `` `code element here` ``   |
 
 #### Miscellaneous

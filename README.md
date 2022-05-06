@@ -6,7 +6,7 @@
 
 > ## Converter
 - The converter just provides a basic html file with no styles.
-- To style the quotes target the `quote` class
+- Only the body is provided, and is not pre formatted.
 
 > ## Syntax
 

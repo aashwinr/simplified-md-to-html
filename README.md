@@ -4,6 +4,10 @@
 - The syntax for this version of this simplified markdown is slightly different from the original.
 - It is trivial to modify the code in order to support the original syntax, I just think this is more clear.
 
+> ## Converter
+- The converter just provides a basic html file with no styles.
+- To style the quotes target the `quote` class
+
 > ## Syntax
 
 #### Top Level Elements

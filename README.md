@@ -19,7 +19,7 @@
 | Bold/Strong     | `* bold element here*`     |
 | Italics/Emphasis | `/ italics element here /` |
 | Strikethrough   | `~ strike element here ~`  |
-| Code blocks     | `\` bold element here\``   |
+| Code blocks     | `` `code element here` ``   |
 
 #### Miscellaneous
 | Name               | Syntax              |

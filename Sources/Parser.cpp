@@ -162,7 +162,6 @@ namespace simpleconv {
 
     vector<ParseUnit> Parser::parse_compounded(ParseUnitKind kind) {
         this->m_current_compound_depth++;
-        this->consume_all_parse_unit_kind(kind);
         vector<ParseUnit> ret_list;
         ret_list.emplace_back(kind);
         vector<ParseUnit> subunits;
@@ -190,6 +189,7 @@ namespace simpleconv {
                         push_back_all(subunits, this->parse_list_item());
                     }
                 }
+                    break;
                 case ParseUnitKind::Quote: {
                     uint8_t compound_depth = Parser::get_compunded_unit_depth(this->next());
                     if (compound_depth != this->m_current_compound_depth) {
@@ -204,6 +204,7 @@ namespace simpleconv {
                         push_back_all(subunits, this->parse_quote_item());
                     }
                 }
+                    break;
                 case ParseUnitKind::Newline:
                     this->parse_newline();
                     if(this->end() || this->next().m_kind != kind) {
@@ -229,7 +230,7 @@ namespace simpleconv {
     }
 
     vector<ParseUnit> Parser::parse_compounded_subunit(ParseUnitKind kind) {
-        this->consume_all_parse_unit_kind(kind);
+        this->consume();
         vector<ParseUnit> ret;
         ParseUnit beginning(kind);
         ParseUnit terminating(kind);
@@ -247,7 +248,9 @@ namespace simpleconv {
                     push_back_all(ret, this->parse_quote());
                     break;
                 case ParseUnitKind::Newline:
-                    break;
+                    this->parse_newline();
+                    ret.push_back(terminating);
+                    return ret;
                 case ParseUnitKind::Bold:
                 case ParseUnitKind::Italics:
                 case ParseUnitKind::Code:

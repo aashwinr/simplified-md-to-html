@@ -16,10 +16,10 @@
 #### Stylistic Elements
 | Name            | Syntax                     |
 |-----------------|----------------------------|
-| Bold/Strong     | **`* bold element here *`**     |
-| Italics/Emphasis | *`/ italics element here /`* |
-| Strikethrough   | ~~`~ㅤstrikethrough element here~`~~  |
-| Code blocks     | `` `code element here` ``   |
+| Bold/Strong     | `*` **`bold element here`** `*`     |
+| Italics/Emphasis | `/` *`italics element here`* `/` |
+| Strikethrough   | `~` ~~`ㅤstrikethrough element here`~~ `~`|
+| Code blocks     | `` ` `` `code element here` `` ` ``   |
 
 #### Miscellaneous
 | Name               | Syntax              |

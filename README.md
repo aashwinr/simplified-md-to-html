@@ -36,4 +36,4 @@ After compiling, run the following command to convert the source file.
 - `./simplemdconverter <source_file> <converted_html_file>`
 
 > ## Compilation Instructions
-- Use the provided `CMakeLists.txt` file to generate an executible.
+- Use the provided `CMakeLists.txt` file to generate a makefile.

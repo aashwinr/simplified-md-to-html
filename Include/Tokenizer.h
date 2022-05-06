@@ -11,7 +11,7 @@
 #include <optional>
 #include <functional>
 
-namespace simpleconv {
+namespace simplemdconverter {
 
     using namespace std;
 

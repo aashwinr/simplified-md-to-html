@@ -10,7 +10,7 @@ inline void push_back_all(std::vector<T> &dest, const std::vector<T> &src) {
     dest.insert(dest.end(), src.begin(), src.end());
 }
 
-namespace simpleconv {
+namespace simplemdconverter {
 
     using namespace std;
 

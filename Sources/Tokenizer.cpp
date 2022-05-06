@@ -4,7 +4,7 @@
 
 #include "../Include/Tokenizer.h"
 
-namespace simpleconv {
+namespace simplemdconverter {
 
     using namespace std;
     vector<Token> Tokenizer::tokenize() {

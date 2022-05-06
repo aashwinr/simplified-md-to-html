@@ -7,7 +7,7 @@
 #include <vector>
 #include "Tokenizer.h"
 
-namespace simpleconv {
+namespace simplemdconverter {
 
     using namespace std;
 

@@ -6,7 +6,7 @@
 #include <fstream>
 #include <string>
 
-std::string simpleconv::Generator::get_html_element(const simpleconv::ParseUnit &p_unit) {
+std::string simplemdconverter::Generator::get_html_element(const simplemdconverter::ParseUnit &p_unit) {
     bool is_terminating = p_unit.m_is_terminating;
     switch (p_unit.m_kind) {
         case ParseUnitKind::Heading:
@@ -34,15 +34,15 @@ std::string simpleconv::Generator::get_html_element(const simpleconv::ParseUnit 
     }
 }
 
-std::string simpleconv::Generator::generate_html_body() {
+std::string simplemdconverter::Generator::generate_html_body() {
     string output;
-    for(const simpleconv::ParseUnit& p_unit: this->m_parse_unit_list) {
-        output += (simpleconv::Generator::get_html_element(p_unit));
+    for(const simplemdconverter::ParseUnit& p_unit: this->m_parse_unit_list) {
+        output += (simplemdconverter::Generator::get_html_element(p_unit));
     }
     return output;
 }
 
-void simpleconv::Generator::convert(const std::string &source_file_path, const std::string &output_file_path) {
+void simplemdconverter::Generator::convert(const std::string &source_file_path, const std::string &output_file_path) {
 
     string file_contents;
     string line;
@@ -52,13 +52,13 @@ void simpleconv::Generator::convert(const std::string &source_file_path, const s
         file_contents += line + '\n';
     }
 
-    simpleconv::Tokenizer tokenizer(file_contents);
+    simplemdconverter::Tokenizer tokenizer(file_contents);
     std::vector<Token> token_list = tokenizer.tokenize();
 
-    simpleconv::Parser parser(token_list);
+    simplemdconverter::Parser parser(token_list);
     std::vector<ParseUnit> parse_unit_list = parser.parse();
 
-    simpleconv::Generator generator(parse_unit_list);
+    simplemdconverter::Generator generator(parse_unit_list);
     string output = generator.generate_html_body();
 
     output_file << output;

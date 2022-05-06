@@ -31,5 +31,9 @@
   - The previous did too much and did some work that was supposed to be done by the parser.
   - Parsing regular text was unnecessarily complicated in the previous version.
 
+> ## Usage
+After compiling, run the following command to convert the source file.
+- `./simplemdconverter <source_file> <converted_html_file>`
+
 > ## Compilation Instructions
 - Use the provided `CMakeLists.txt` file to generate an executible.

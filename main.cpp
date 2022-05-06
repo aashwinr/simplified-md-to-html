@@ -1,11 +1,10 @@
 #include "Include/Tokenizer.h"
 #include "Include/Parser.h"
+#include "Include/Generator.h"
 #include <string>
+#include <fstream>
+#include <iostream>
 
 int main() {
-    std::string contents = "# Hello this is a heading\n ## This is another heading\n";
-    simpleconv::Tokenizer tokenizer(contents);
-    auto tokens = tokenizer.tokenize();
-    simpleconv::Parser parser(tokens);
-    auto ret = parser.parse();
+    simpleconv::Generator::convert("../hello.md", "../hello.html");
 }

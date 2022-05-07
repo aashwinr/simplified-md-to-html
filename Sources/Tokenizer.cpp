@@ -62,6 +62,13 @@ namespace simplemdconverter {
         });
     }
 
+    string Tokenizer::consume_whitespace_excluding_newline() {
+        if(!this->eof() && this->next() != '\n') {
+            return this->consume_whitespace();
+        }
+        return "";
+    }
+
     string Tokenizer::consume_all_consecutive(char x) {
         return this->consume_while([x](char ch){ return ch == x; });
     }
@@ -84,7 +91,7 @@ namespace simplemdconverter {
             TokenKind::Specifier,
             this->consume_all_consecutive(specifier),
         };
-        this->consume_whitespace();
+//        this->consume_whitespace_excluding_newline();
         return ret;
     }
 
@@ -105,6 +112,7 @@ namespace simplemdconverter {
         }
         return text_token;
     }
+
 
 
 }

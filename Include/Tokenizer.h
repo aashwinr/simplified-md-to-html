@@ -43,6 +43,7 @@ namespace simplemdconverter {
         char consume();
         string consume_while(const function<bool(char)>& condition);
         string consume_whitespace();
+        string consume_whitespace_excluding_newline();
         string consume_all_consecutive(char x);
         inline bool eof();
 

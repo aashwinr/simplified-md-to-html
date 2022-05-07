@@ -3,6 +3,7 @@
 //
 
 #include "../Include/Generator.h"
+#include "../Include/Constants.h"
 #include <fstream>
 #include <string>
 
@@ -22,7 +23,7 @@ std::string simplemdconverter::Generator::get_html_element(const simplemdconvert
         case ParseUnitKind::Code:
             return is_terminating ? "</code>" : "<code>";
         case ParseUnitKind::Strikethrough:
-            return is_terminating ? "</strirke>" : "<strike>";
+            return is_terminating ? "</strike>" : "<strike>";
         case ParseUnitKind::Text:
             return p_unit.m_contents;
         case ParseUnitKind::Newline:
@@ -61,6 +62,8 @@ void simplemdconverter::Generator::convert(const std::string &source_file_path, 
     simplemdconverter::Generator generator(parse_unit_list);
     string output = generator.generate_html_body();
 
+    output_file << simplemdconverter::constants::html_body_opening;
     output_file << output;
+    output_file << simplemdconverter::constants::html_body_terminating;
 
 }

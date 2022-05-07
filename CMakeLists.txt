@@ -3,4 +3,4 @@ project(ProperMDTranslater)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(simplemdconverter Sources/Parser.cpp Sources/Tokenizer.cpp main.cpp Sources/Generator.cpp)
+add_executable(simplemdconverter Sources/Parser.cpp Sources/Tokenizer.cpp main.cpp Sources/Generator.cpp Include/Constants.h)

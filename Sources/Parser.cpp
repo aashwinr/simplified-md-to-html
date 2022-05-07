@@ -191,7 +191,7 @@ namespace simplemdconverter {
                             this->m_current_compound_depth--;
                             return ret_list;
                         }
-                        push_back_all(subunits, this->parse_list_item());
+                        push_back_all(subunits, this->parse_list());
                     } else {
                         this->consume();
                         push_back_all(subunits, this->parse_list_item());
@@ -207,7 +207,7 @@ namespace simplemdconverter {
                             this->m_current_compound_depth--;
                             return ret_list;
                         }
-                        push_back_all(subunits, this->parse_quote_item());
+                        push_back_all(subunits, this->parse_quote());
                     } else {
                         this->consume();
                         push_back_all(subunits, this->parse_quote_item());

@@ -161,6 +161,7 @@ namespace simplemdconverter {
     }
 
     vector<ParseUnit> Parser::parse_compounded(ParseUnitKind kind) {
+        this->consume();
         this->m_current_compound_depth++;
         vector<ParseUnit> ret_list;
         ret_list.emplace_back(kind);
@@ -169,6 +170,12 @@ namespace simplemdconverter {
         bool break_outer_loop = false;
         ParseUnit terminating(kind);
         terminating.m_is_terminating = true;
+
+        if(kind == ParseUnitKind::List) {
+            push_back_all(ret_list, this->parse_list_item());
+        } else {
+            push_back_all(ret_list, this->parse_quote_item());
+        }
 
         while(!this->end()) {
             switch(this->next().m_kind) {
@@ -184,8 +191,9 @@ namespace simplemdconverter {
                             this->m_current_compound_depth--;
                             return ret_list;
                         }
-                        push_back_all(subunits, this->parse_list());
+                        push_back_all(subunits, this->parse_list_item());
                     } else {
+                        this->consume();
                         push_back_all(subunits, this->parse_list_item());
                     }
                 }
@@ -199,8 +207,9 @@ namespace simplemdconverter {
                             this->m_current_compound_depth--;
                             return ret_list;
                         }
-                        push_back_all(subunits, this->parse_quote());
+                        push_back_all(subunits, this->parse_quote_item());
                     } else {
+                        this->consume();
                         push_back_all(subunits, this->parse_quote_item());
                     }
                 }
@@ -230,7 +239,6 @@ namespace simplemdconverter {
     }
 
     vector<ParseUnit> Parser::parse_compounded_subunit(ParseUnitKind kind) {
-        this->consume();
         vector<ParseUnit> ret;
         ParseUnit beginning(kind);
         ParseUnit terminating(kind);
@@ -242,11 +250,9 @@ namespace simplemdconverter {
                     ret.push_back(this->parse_heading());
                     break;
                 case ParseUnitKind::List:
-                    push_back_all(ret, this->parse_list());
-                    break;
+                    return this->parse_list();
                 case ParseUnitKind::Quote:
-                    push_back_all(ret, this->parse_quote());
-                    break;
+                    return this->parse_quote();
                 case ParseUnitKind::Newline:
                     this->parse_newline();
                     ret.push_back(terminating);
@@ -273,7 +279,7 @@ namespace simplemdconverter {
     }
 
     vector<ParseUnit> Parser::parse_quote() {
-        return this->parse_compounded(ParseUnitKind::Quote);
+        return this->parse_compounded(ParseUnitKind::QuoteItem);
     }
 
     vector<ParseUnit> Parser::parse_quote_item() {
@@ -296,8 +302,6 @@ namespace simplemdconverter {
         return this->parse_uncompounded(ParseUnitKind::Strikethrough);
     }
 
-    // Fixme: Check for cases when newline is on a separate line, in that case it needs to return a newline.
-    // For now it will just not return anything.
     ParseUnit Parser::parse_newline() {
         return this->consume();
     }
